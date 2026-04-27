@@ -1,0 +1,860 @@
+---
+title: "VPD Surveillance in Yemen (2024–2025)"
+output:
+  flexdashboard::flex_dashboard:
+    theme: flatly
+    orientation: rows
+    vertical_layout: scroll
+    navbar:
+      - { title: "GitHub Source Code", href: "https://github.com/Akanshya1998/DATA555_Dashboard", align: right, icon: "fa-github" }
+    css: |
+      /* === GLOBAL === */
+      body {
+        font-family: Arial, sans-serif;
+        font-size: 15px;
+        color: #2c3e50;
+        background-color: #f5f6fa;
+      }
+
+      /* === NAVBAR === */
+      .navbar, .navbar-default {
+        background-color: #1a5276 !important;
+        border: none !important;
+      }
+      .navbar-brand,
+      .navbar-default .navbar-brand,
+      .navbar-nav > li > a,
+      .navbar-default .navbar-nav > li > a {
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        font-size: 15px !important;
+      }
+      .navbar-default .navbar-nav > .active > a,
+      .navbar-default .navbar-nav > .active > a:hover {
+        background-color: #154360 !important;
+        color: #ffffff !important;
+      }
+      .navbar-nav > li > a:hover {
+        background-color: #1f618d !important;
+      }
+
+      /* === VALUE BOXES === */
+      .value-box .value {
+        font-size: 30px !important;
+        font-weight: 700 !important;
+      }
+      .value-box .caption {
+        font-size: 12.5px !important;
+        font-weight: 500 !important;
+        line-height: 1.4 !important;
+      }
+
+      /* === CALLOUT BOX (how to read) === */
+      .callout {
+        background-color: #eaf4fb;
+        border-left: 5px solid #2471A3;
+        border-radius: 5px;
+        padding: 14px 18px;
+        font-size: 14px;
+        line-height: 1.8;
+        margin: 6px 0 10px 0;
+        color: #1a2f45;
+      }
+
+      /* === IMPACT BOX (why this matters) === */
+      .impact-box {
+        background: linear-gradient(135deg, #1a5276, #1f618d);
+        color: #ffffff;
+        padding: 18px 26px;
+        border-radius: 8px;
+        font-size: 14.5px;
+        line-height: 1.9;
+        margin: 12px 0;
+      }
+      .impact-box strong {
+        color: #aed6f1;
+      }
+
+      /* === ABOUT TAB CARDS === */
+      .info-card {
+        background: #ffffff;
+        border: 1px solid #d5dbdb;
+        border-left: 5px solid #1a5276;
+        border-radius: 6px;
+        padding: 16px 20px;
+        margin-bottom: 16px;
+        font-size: 14.5px;
+        line-height: 1.85;
+      }
+      .info-card h4 {
+        color: #1a5276;
+        margin: 0 0 8px 0;
+        font-size: 15px;
+        font-weight: 700;
+      }
+
+      /* === VARIABLES TABLE === */
+      .var-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        margin-top: 10px;
+      }
+      .var-table th {
+        background: #1a5276;
+        color: white;
+        padding: 9px 13px;
+        text-align: left;
+      }
+      .var-table td {
+        padding: 8px 13px;
+        border: 1px solid #dde;
+      }
+      .var-table tr:nth-child(even) td {
+        background: #f8f9fa;
+      }
+
+      /* === CHART PANEL HEADERS === */
+      .chart-title {
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        color: #1a5276 !important;
+      }
+
+      /* === MOBILE RESPONSIVE === */
+      @media (max-width: 768px) {
+        .value-box .value { font-size: 24px !important; }
+        .value-box .caption { font-size: 11px !important; }
+        .callout { font-size: 13px; }
+        .impact-box { font-size: 13.5px; padding: 14px 18px; }
+        .info-card { font-size: 13.5px; }
+      }
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(plotly)
+library(DT)
+library(htmltools)
+
+# ── Colour palette ─────────────────────────────────────────────
+gov_colors <- c(
+  "Abyan"    = "#185FA5",
+  "Aden"     = "#1D9E75",
+  "Ad'Dhale" = "#D85A30",
+  "Lahj"     = "#7F77DD"
+)
+year_colors <- c("2024" = "#2471A3", "2025" = "#C0392B")
+
+month_order <- c("January","February","March","April","May","June",
+                 "July","August","September","October","November","December")
+month_abbr  <- c("Jan","Feb","Mar","Apr","May","Jun",
+                 "Jul","Aug","Sep","Oct","Nov","Dec")
+
+# ── Dataset 1: Monthly VPD cases ───────────────────────────────
+monthly_gov <- tribble(
+  ~Year,  ~Month,       ~Governorate, ~Cases,
+  "2024","October",   "Abyan",  6,
+  "2024","November",  "Abyan", 11,
+  "2024","December",  "Abyan",  4,
+  "2025","January",   "Abyan", 21,
+  "2025","February",  "Abyan", 31,
+  "2025","March",     "Abyan", 20,
+  "2025","April",     "Abyan",  0,
+  "2025","May",       "Abyan",  0,
+  "2025","June",      "Abyan",  0,
+  "2025","July",      "Abyan",  0,
+  "2025","August",    "Abyan",  0,
+  "2025","September", "Abyan",  0,
+  "2024","April",     "Ad'Dhale",  2,
+  "2024","May",       "Ad'Dhale", 12,
+  "2024","June",      "Ad'Dhale", 17,
+  "2024","July",      "Ad'Dhale", 19,
+  "2024","August",    "Ad'Dhale", 39,
+  "2024","September", "Ad'Dhale", 30,
+  "2024","October",   "Ad'Dhale", 13,
+  "2024","November",  "Ad'Dhale", 17,
+  "2024","December",  "Ad'Dhale", 19,
+  "2025","January",   "Ad'Dhale", 28,
+  "2025","February",  "Ad'Dhale", 36,
+  "2025","March",     "Ad'Dhale", 17,
+  "2025","April",     "Ad'Dhale", 26,
+  "2025","May",       "Ad'Dhale", 23,
+  "2025","June",      "Ad'Dhale", 15,
+  "2025","July",      "Ad'Dhale", 31,
+  "2025","August",    "Ad'Dhale", 24,
+  "2025","September", "Ad'Dhale", 22,
+  "2024","October",   "Aden", 10,
+  "2024","November",  "Aden", 27,
+  "2024","December",  "Aden", 18,
+  "2025","January",   "Aden",  8,
+  "2025","February",  "Aden",  6,
+  "2025","March",     "Aden", 26,
+  "2025","April",     "Aden",  0,
+  "2025","May",       "Aden",  0,
+  "2025","June",      "Aden",  0,
+  "2025","July",      "Aden",  0,
+  "2025","August",    "Aden",  0,
+  "2025","September", "Aden",  0,
+  "2024","November",  "Lahj", 12,
+  "2024","December",  "Lahj",  6,
+  "2025","January",   "Lahj", 40,
+  "2025","February",  "Lahj",  8,
+  "2025","March",     "Lahj", 19,
+  "2025","April",     "Lahj", 17,
+  "2025","May",       "Lahj", 37,
+  "2025","June",      "Lahj", 17,
+  "2025","July",      "Lahj", 27,
+  "2025","August",    "Lahj", 13,
+  "2025","September", "Lahj", 11
+) %>%
+  mutate(
+    Month      = factor(Month, levels = month_order, ordered = TRUE),
+    Month_abbr = month_abbr[as.integer(Month)]
+  )
+
+# ── Dataset 2: Disease summary ──────────────────────────────────
+summary_tbl <- tribble(
+  ~Governorate, ~Disease,        ~`2024 Cases`, ~`2025 Cases`,
+  "Ad'Dhale","Typhoid Fever",  125, 173,
+  "Aden",    "Typhoid Fever",   32,  10,
+  "Abyan",   "Typhoid Fever",   10,  13,
+  "Lahj",    "Typhoid Fever",    4,  18,
+  "Lahj",    "Chickenpox",       3,  56,
+  "Abyan",   "Chickenpox",       4,  40,
+  "Ad'Dhale","Chickenpox",      12,  10,
+  "Aden",    "Chickenpox",      13,  13,
+  "Lahj",    "Measles",          0,  32,
+  "Ad'Dhale","Measles",          5,  15,
+  "Abyan",   "Measles",          1,  10,
+  "Aden",    "Measles",          1,   4,
+  "Ad'Dhale","Mumps",           17,  16,
+  "Aden",    "Mumps",            8,  10,
+  "Abyan",   "Mumps",            6,   9,
+  "Lahj",    "Mumps",            2,  21,
+  "Ad'Dhale","Hepatitis A",      9,   8,
+  "Lahj",    "Hepatitis A",      4,  24,
+  "Abyan",   "Hepatitis A",      0,   2,
+  "Aden",    "Hepatitis A",      0,   2,
+  "Lahj",    "Pertussis",        2,  33,
+  "Aden",    "Pertussis",        1,   0,
+  "Lahj",    "Hepatitis B",      3,   4,
+  "Aden",    "Rubella",          0,   1,
+  "Lahj",    "Meningitis",       0,   1
+) %>%
+  mutate(
+    Change     = `2025 Cases` - `2024 Cases`,
+    `% Change` = ifelse(
+      `2024 Cases` == 0, NA_real_,
+      round((Change / `2024 Cases`) * 100, 1)
+    )
+  ) %>%
+  arrange(desc(`2025 Cases`))
+
+# ── Dataset 3: Measles doses vs cases ──────────────────────────
+vacc_compare <- tribble(
+  ~Governorate, ~Year, ~Measles_Doses, ~Measles_Cases,
+  "Abyan",    "2024",  504,  7,
+  "Abyan",    "2025",  842, 61,
+  "Ad'Dhale", "2024",  480, 15,
+  "Ad'Dhale", "2025", 1250, 45,
+  "Aden",     "2024",   45,  3,
+  "Aden",     "2025",   32, 11,
+  "Lahj",     "2024",  225,  0,
+  "Lahj",     "2025",  823, 32
+)
+
+# ── KPI values ──────────────────────────────────────────────────
+total_2024 <- monthly_gov %>% filter(Year=="2024") %>% pull(Cases) %>% sum()
+total_2025 <- monthly_gov %>% filter(Year=="2025") %>% pull(Cases) %>% sum()
+all_govs   <- c("Abyan","Aden","Ad'Dhale","Lahj")
+all_years  <- c("2025","2024")
+```
+
+
+<!-- ============================================================
+     TAB 1: DASHBOARD
+============================================================ -->
+
+# Dashboard {data-icon="fa-chart-line"}
+
+## Row {data-height=120}
+
+### Total VPD Cases in 2024
+
+```{r}
+valueBox(total_2024, icon="fa-calendar-check", color="#2471A3",
+  caption="Total VPD Cases — 2024 (available months only)")
+```
+
+### Total VPD Cases in 2025 (Jan–Sep)
+
+```{r}
+valueBox(total_2025, icon="fa-virus", color="#C0392B",
+  caption="Total VPD Cases — 2025 (January to September)")
+```
+
+### Lahj: Case Increase 2024 to 2025
+
+```{r}
+valueBox("+950%", icon="fa-arrow-trend-up", color="#7F77DD",
+  caption="Lahj: 18 cases in 2024 to 189 cases in 2025")
+```
+
+### Governorates Monitored
+
+```{r}
+valueBox(4, icon="fa-map-marker-alt", color="#1D9E75",
+  caption="Abyan, Aden, Ad'Dhale, and Lahj")
+```
+
+## Row {data-height=90}
+
+### {.no-padding}
+
+<div class="callout">
+<strong>How to read Widget 1A (left):</strong>
+Each coloured line represents one governorate. Use the <strong>Year dropdown</strong> to switch between 2024 and 2025. Hover over any data point to see the governorate name, month, year, and exact case count.
+&nbsp;&nbsp;|&nbsp;&nbsp;
+<strong>Widget 1B (right):</strong>
+Use the <strong>Governorate dropdown</strong> to select one governorate. The solid red line shows 2025 cases and the dashed blue line shows 2024 cases month by month. Hover for full detail.
+</div>
+
+## Row {data-height=520}
+
+### Widget 1A: Monthly VPD Trends by Governorate — Select a Year {data-width=6}
+
+```{r widget1a}
+fig1a   <- plot_ly()
+tmeta_a <- list()
+tidx_a  <- 0
+
+for (yr in all_years) {
+  for (gov in all_govs) {
+    sub <- monthly_gov %>%
+      filter(Governorate == gov, Year == yr) %>%
+      arrange(Month)
+
+    tidx_a <- tidx_a + 1
+    tmeta_a[[tidx_a]] <- yr
+
+    fig1a <- fig1a %>%
+      add_trace(
+        data        = sub,
+        x           = ~Month_abbr,
+        y           = ~Cases,
+        type        = "scatter",
+        mode        = "lines+markers",
+        name        = gov,
+        legendgroup = gov,
+        showlegend  = (yr == "2025"),
+        visible     = (yr == "2025"),
+        line   = list(color = gov_colors[[gov]], width = 3),
+        marker = list(color = gov_colors[[gov]], size = 10,
+                      symbol = "circle",
+                      line = list(color = "white", width = 2)),
+        hovertemplate = paste0(
+          "<b>", gov, "</b><br>",
+          "Month: <b>%{x}</b><br>",
+          "Year: <b>", yr, "</b><br>",
+          "New VPD Cases: <b>%{y}</b>",
+          "<extra></extra>"
+        )
+      )
+  }
+}
+
+vis_yr <- function(y) sapply(tmeta_a, function(x) x == y)
+
+fig1a %>%
+  layout(
+    title = list(
+      text = "<b>Monthly New VPD Cases by Governorate</b><br><sup>Yemen, CARE-Supported Governorates | Use the dropdown to select a year</sup>",
+      font = list(size = 15, family = "Arial, sans-serif", color = "#1a2f45"),
+      x = 0.5
+    ),
+    updatemenus = list(list(
+      type = "dropdown", direction = "down",
+      x = 0.01, xanchor = "left",
+      y = 1.10, yanchor = "top",
+      bgcolor = "white", bordercolor = "#2471A3", borderwidth = 2,
+      font = list(size = 13),
+      buttons = list(
+        list(method = "restyle",
+             args   = list("visible", as.list(vis_yr("2025"))),
+             label  = "  Year: 2025  "),
+        list(method = "restyle",
+             args   = list("visible", as.list(vis_yr("2024"))),
+             label  = "  Year: 2024  ")
+      )
+    )),
+    xaxis = list(
+      title = list(text = "Month",
+                   font = list(size = 14, color = "#2c3e50")),
+      tickfont = list(size = 12, color = "#2c3e50"),
+      categoryorder = "array",
+      categoryarray = month_abbr,
+      showgrid = TRUE, gridcolor = "#eeeeee"
+    ),
+    yaxis = list(
+      title = list(text = "New VPD Cases (count)",
+                   font = list(size = 14, color = "#2c3e50")),
+      tickfont = list(size = 12, color = "#2c3e50"),
+      rangemode = "tozero",
+      showgrid = TRUE, gridcolor = "#eeeeee"
+    ),
+    legend = list(
+      title = list(text = "<b>Governorate</b>", font = list(size = 13)),
+      font  = list(size = 12),
+      bgcolor = "rgba(255,255,255,0.95)",
+      bordercolor = "#cccccc", borderwidth = 1
+    ),
+    hovermode  = "x unified",
+    hoverlabel = list(bgcolor = "white", bordercolor = "#cccccc",
+                      font = list(size = 13, color = "#2c3e50")),
+    plot_bgcolor  = "#fafafa",
+    paper_bgcolor = "white",
+    margin = list(t = 120, b = 50, l = 70, r = 20)
+  ) %>%
+  config(displayModeBar = TRUE,
+         modeBarButtonsToRemove = c("lasso2d","select2d"),
+         toImageButtonOptions = list(filename="vpd_trends", format="png"))
+```
+
+### Widget 1B: 2024 vs 2025 Monthly Cases — Select a Governorate {data-width=6}
+
+```{r widget1b}
+fig1b   <- plot_ly()
+tmeta_b <- list()
+tidx_b  <- 0
+
+for (gov in all_govs) {
+  for (yr in all_years) {
+    sub <- monthly_gov %>%
+      filter(Governorate == gov, Year == yr) %>%
+      arrange(Month)
+
+    tidx_b <- tidx_b + 1
+    tmeta_b[[tidx_b]] <- gov
+
+    fig1b <- fig1b %>%
+      add_trace(
+        data        = sub,
+        x           = ~Month_abbr,
+        y           = ~Cases,
+        type        = "scatter",
+        mode        = "lines+markers",
+        name        = paste("Year", yr),
+        legendgroup = yr,
+        showlegend  = (gov == "Ad'Dhale"),
+        visible     = (gov == "Ad'Dhale"),
+        line = list(
+          color = year_colors[[yr]],
+          width = 3,
+          dash  = ifelse(yr == "2025", "solid", "dash")
+        ),
+        marker = list(
+          color  = year_colors[[yr]],
+          size   = 10,
+          symbol = ifelse(yr == "2025", "circle", "diamond"),
+          line   = list(color = "white", width = 2)
+        ),
+        hovertemplate = paste0(
+          "<b>", gov, " \u2014 ", yr, "</b><br>",
+          "Month: <b>%{x}</b><br>",
+          "New VPD Cases: <b>%{y}</b>",
+          "<extra></extra>"
+        )
+      )
+  }
+}
+
+vis_gov  <- function(g) sapply(tmeta_b, function(x) x == g)
+gov_btns <- lapply(all_govs, function(g) {
+  list(method = "restyle",
+       args   = list("visible", as.list(vis_gov(g))),
+       label  = paste0("  ", g, "  "))
+})
+
+fig1b %>%
+  layout(
+    title = list(
+      text = "<b>Monthly VPD Cases: 2024 vs 2025 by Governorate</b><br><sup>Select a governorate | Solid line = 2025 &nbsp; Dashed line = 2024</sup>",
+      font = list(size = 15, family = "Arial, sans-serif", color = "#1a2f45"),
+      x = 0.5
+    ),
+    updatemenus = list(list(
+      type = "dropdown", direction = "down",
+      x = 0.01, xanchor = "left",
+      y = 1.10, yanchor = "top",
+      bgcolor = "white", bordercolor = "#C0392B", borderwidth = 2,
+      font = list(size = 13),
+      buttons = gov_btns
+    )),
+    xaxis = list(
+      title = list(text = "Month",
+                   font = list(size = 14, color = "#2c3e50")),
+      tickfont = list(size = 12, color = "#2c3e50"),
+      categoryorder = "array",
+      categoryarray = month_abbr,
+      showgrid = TRUE, gridcolor = "#eeeeee"
+    ),
+    yaxis = list(
+      title = list(text = "New VPD Cases (count)",
+                   font = list(size = 14, color = "#2c3e50")),
+      tickfont = list(size = 12, color = "#2c3e50"),
+      rangemode = "tozero",
+      showgrid = TRUE, gridcolor = "#eeeeee"
+    ),
+    legend = list(
+      title = list(text = "<b>Year</b>", font = list(size = 13)),
+      font  = list(size = 12),
+      bgcolor = "rgba(255,255,255,0.95)",
+      bordercolor = "#cccccc", borderwidth = 1
+    ),
+    hovermode  = "x unified",
+    hoverlabel = list(bgcolor = "white", bordercolor = "#cccccc",
+                      font = list(size = 13, color = "#2c3e50")),
+    plot_bgcolor  = "#fafafa",
+    paper_bgcolor = "white",
+    margin = list(t = 120, b = 50, l = 70, r = 20)
+  ) %>%
+  config(displayModeBar = TRUE,
+         modeBarButtonsToRemove = c("lasso2d","select2d"),
+         toImageButtonOptions = list(filename="vpd_comparison", format="png"))
+```
+
+## Row {data-height=100}
+
+### {.no-padding}
+
+<div class="impact-box">
+<strong>Why this matters:</strong>
+Vaccine-preventable diseases are surging across CARE-supported governorates in Yemen, with Lahj showing a 950% increase in VPD cases between 2024 and 2025. This sharp rise is directly connected to disruptions in routine immunization caused by ongoing conflict.
+<strong>Strengthening EPI outreach and restoring cold-chain infrastructure in these districts is a critical, measurable, and cost-effective priority for humanitarian health actors working in Yemen.</strong>
+</div>
+
+
+<!-- ============================================================
+     TAB 2: DISEASE TABLE & VACCINATION
+============================================================ -->
+
+# Disease Table & Vaccination {data-icon="fa-table"}
+
+## Row {data-height=90}
+
+### {.no-padding}
+
+<div class="callout">
+<strong>Widget 2 (left):</strong>
+This table shows new VPD case counts by disease and governorate for 2024 and 2025. Use the <strong>search boxes at the top of each column</strong> to filter, and click any column header to sort.
+<span style="color:#A32D2D;font-weight:bold;">Red</span> values mean cases increased from 2024 to 2025;
+<span style="color:#1D9E75;font-weight:bold;">green</span> means they decreased.
+Hover over any cell to see the column label.
+&nbsp;&nbsp;|&nbsp;&nbsp;
+<strong>Widget 3 (right):</strong>
+The solid bars show measles vaccination doses given. The faded bars show measles cases reported. Blue = 2024, Red = 2025. Hover over any bar for full detail.
+</div>
+
+## Row {data-height=520}
+
+### Widget 2: VPD Cases by Disease and Governorate (2024 vs 2025) {data-width=6}
+
+```{r widget2}
+dt_display <- summary_tbl %>%
+  mutate(
+    `% Change` = case_when(
+      is.na(`% Change`) & `2024 Cases` == 0 & `2025 Cases` == 0 ~ "\u2014",
+      is.na(`% Change`) & `2024 Cases` == 0 ~ "New in 2025",
+      TRUE ~ paste0(`% Change`, "%")
+    )
+  )
+
+datatable(
+  dt_display,
+  caption = tags$caption(
+    style = "caption-side:top; text-align:left; font-size:15px;
+             font-weight:bold; color:#1a5276; padding-bottom:10px;",
+    "New VPD Cases by Governorate and Disease \u2014 Yemen 2024 vs 2025"
+  ),
+  filter   = "top",
+  rownames = FALSE,
+  options  = list(
+    dom        = "frtip",
+    pageLength = 25,
+    scrollX    = TRUE,
+    columnDefs = list(
+      list(width = "120px", targets = 0),
+      list(width = "140px", targets = 1),
+      list(className = "dt-right", targets = c(2,3,4,5)),
+      list(width = "88px", targets = c(2,3,4,5))
+    )
+  ),
+  callback = DT::JS("
+    table.on('mouseover', 'td', function() {
+      var cols = ['Governorate','Disease',
+                  '2024 Cases','2025 Cases','Change','% Change'];
+      var i = table.cell(this).index().column;
+      $(this).attr('title', cols[i] + ': ' + $(this).text());
+    });
+  "),
+  class = "cell-border stripe hover"
+) %>%
+  formatStyle("2025 Cases",
+    background = styleColorBar(
+      c(0, max(summary_tbl[["2025 Cases"]], na.rm=TRUE)+5), "#B5D4F4"),
+    backgroundSize = "90% 65%",
+    backgroundRepeat = "no-repeat",
+    backgroundPosition = "center"
+  ) %>%
+  formatStyle("Change",
+    color = styleInterval(c(-0.001, 0.001),
+                          c("#1D9E75", "gray", "#A32D2D")),
+    fontWeight = "bold"
+  ) %>%
+  formatStyle("% Change",
+    fontWeight = "bold"
+  ) %>%
+  formatStyle(columns=0:5, fontSize="14px")
+```
+
+### Widget 3: Measles Vaccination Doses vs Measles Cases {data-width=6}
+
+```{r widget3}
+plot_ly() %>%
+  add_bars(
+    data = vacc_compare %>% filter(Year=="2024"),
+    x = ~Governorate, y = ~Measles_Doses,
+    name = "Doses Given \u2014 2024",
+    marker = list(color="#2471A3", opacity=0.90,
+                  line=list(color="white",width=1.5)),
+    hovertemplate = paste0(
+      "<b>Doses Given \u2014 2024</b><br>",
+      "Governorate: <b>%{x}</b><br>",
+      "Doses Administered: <b>%{y}</b>",
+      "<extra></extra>")
+  ) %>%
+  add_bars(
+    data = vacc_compare %>% filter(Year=="2025"),
+    x = ~Governorate, y = ~Measles_Doses,
+    name = "Doses Given \u2014 2025",
+    marker = list(color="#C0392B", opacity=0.90,
+                  line=list(color="white",width=1.5)),
+    hovertemplate = paste0(
+      "<b>Doses Given \u2014 2025</b><br>",
+      "Governorate: <b>%{x}</b><br>",
+      "Doses Administered: <b>%{y}</b>",
+      "<extra></extra>")
+  ) %>%
+  add_bars(
+    data = vacc_compare %>% filter(Year=="2024"),
+    x = ~Governorate, y = ~Measles_Cases,
+    name = "Cases Reported \u2014 2024",
+    marker = list(color="#2471A3", opacity=0.35,
+                  line=list(color="#2471A3",width=1.5)),
+    hovertemplate = paste0(
+      "<b>Cases Reported \u2014 2024</b><br>",
+      "Governorate: <b>%{x}</b><br>",
+      "Cases: <b>%{y}</b>",
+      "<extra></extra>")
+  ) %>%
+  add_bars(
+    data = vacc_compare %>% filter(Year=="2025"),
+    x = ~Governorate, y = ~Measles_Cases,
+    name = "Cases Reported \u2014 2025",
+    marker = list(color="#C0392B", opacity=0.35,
+                  line=list(color="#C0392B",width=1.5)),
+    hovertemplate = paste0(
+      "<b>Cases Reported \u2014 2025</b><br>",
+      "Governorate: <b>%{x}</b><br>",
+      "Cases: <b>%{y}</b>",
+      "<extra></extra>")
+  ) %>%
+  layout(
+    title = list(
+      text = "<b>Measles Vaccination Doses vs Measles Cases Reported</b><br><sup>By Governorate, Yemen 2024 vs 2025 | Solid bars = doses given; faded bars = cases reported</sup>",
+      font = list(size = 14, family = "Arial, sans-serif", color = "#1a2f45"),
+      x = 0.5
+    ),
+    barmode = "group",
+    bargap  = 0.22,
+    xaxis = list(
+      title = list(text = "Governorate",
+                   font = list(size = 14, color = "#2c3e50")),
+      tickfont = list(size = 12, color = "#2c3e50"),
+      showgrid = FALSE
+    ),
+    yaxis = list(
+      title = list(text = "Count (doses or cases)",
+                   font = list(size = 14, color = "#2c3e50")),
+      tickfont = list(size = 12, color = "#2c3e50"),
+      rangemode = "tozero",
+      showgrid = TRUE, gridcolor = "#eeeeee"
+    ),
+    legend = list(
+      font = list(size = 12),
+      bgcolor = "rgba(255,255,255,0.95)",
+      bordercolor = "#cccccc", borderwidth = 1,
+      orientation = "h", x = 0, y = -0.28
+    ),
+    hovermode  = "closest",
+    hoverlabel = list(bgcolor = "white", bordercolor = "#cccccc",
+                      font = list(size = 13, color = "#2c3e50")),
+    plot_bgcolor  = "#fafafa",
+    paper_bgcolor = "white",
+    margin = list(t = 90, b = 120, l = 70, r = 20)
+  ) %>%
+  config(displayModeBar = TRUE,
+         modeBarButtonsToRemove = c("lasso2d","select2d"),
+         toImageButtonOptions = list(filename="measles_doses_cases", format="png"))
+```
+
+## Row {data-height=100}
+
+### {.no-padding}
+
+<div class="impact-box">
+<strong>Why this matters:</strong>
+Vaccine-preventable diseases are surging across CARE-supported governorates in Yemen, with Lahj showing a 950% increase in VPD cases between 2024 and 2025. This sharp rise is directly connected to disruptions in routine immunization caused by ongoing conflict.
+<strong>Strengthening EPI outreach and restoring cold-chain infrastructure in these districts is a critical, measurable, and cost-effective priority for humanitarian health actors working in Yemen.</strong>
+</div>
+
+
+<!-- ============================================================
+     TAB 3: ABOUT THE DATA
+     Rubric: separate tab, data source, sample size, collection
+     method, study population, time period — max 5 sentences
+============================================================ -->
+
+# About the Data {data-icon="fa-info-circle"}
+
+## Row
+
+### Dataset Description {data-width=7}
+
+```{r about, echo=FALSE}
+div(
+  style = "padding:26px; font-size:14.5px; line-height:1.9; color:#2c3e50;",
+
+  h3(style="color:#1a5276; border-bottom:2px solid #2980b9;
+            padding-bottom:9px; margin-top:0; font-size:20px;",
+     "About This Dataset"),
+
+  div(class="info-card",
+    h4("Data Source"),
+    p("This dashboard uses CARE Yemen's internal ",
+      strong("OPD (Outpatient Department) surveillance records"),
+      " and ", strong("EPI (Expanded Programme on Immunization) monthly data entry sheets;"),
+      " the dataset is ", strong("confidential"),
+      " and not publicly available, and was shared under a data-use agreement
+      for academic research purposes only.")
+  ),
+
+  div(class="info-card",
+    h4("Data Collection Method"),
+    p("Data were collected through ", strong("passive OPD disease surveillance"),
+      " where health facility staff recorded new VPD case counts on a monthly basis,
+      alongside ", strong("active EPI tracking"),
+      " of vaccination doses administered per governorate each month.")
+  ),
+
+  div(class="info-card",
+    h4("Study Population"),
+    p("Patients who presented to CARE-supported health facilities in four
+      governorates of Yemen — Abyan, Aden, Ad'Dhale, and Lahj — with symptoms
+      of vaccine-preventable diseases, including Typhoid Fever, Measles,
+      Chickenpox, Mumps, Hepatitis A/B, Pertussis, Rubella, and Meningitis.")
+  ),
+
+  div(class="info-card",
+    h4("Time Period and Location"),
+    p("The data cover ", strong("April 2024 through September 2025"),
+      " across four CARE-supported governorates in Yemen. Months with
+      incomplete surveillance coverage — January to March 2024 and
+      October to December 2025 — are excluded from trend analyses.")
+  ),
+
+  div(class="info-card",
+    h4("Sample Size"),
+    p("A total of ", strong("498 new VPD case records"),
+      " across 25 governorate-disease combinations are included in the
+      disease-level table. The monthly trend charts are based on 51
+      governorate-month-year data points across the four governorates.")
+  ),
+
+  hr(style="border-top:1px solid #dee2e6; margin:22px 0;"),
+
+  h4(style="color:#1a5276; font-size:16px;", "Research Question"),
+  p(em("How were disruptions in routine immunization associated with changes
+       in reported vaccine-preventable disease incidence in CARE-supported
+       districts in Yemen between 2024 and 2025?")),
+
+  h4(style="color:#1a5276; margin-top:20px; font-size:16px;", "Key Variables"),
+  tags$table(class="var-table",
+    tags$thead(tags$tr(
+      tags$th("Variable"), tags$th("Type"), tags$th("Description")
+    )),
+    tags$tbody(
+      tags$tr(tags$td(strong("New VPD Cases")), tags$td("Count"),
+              tags$td("Monthly new VPD patients at CARE OPD facilities")),
+      tags$tr(tags$td(strong("Governorate")), tags$td("Categorical"),
+              tags$td("Abyan, Aden, Ad'Dhale, or Lahj")),
+      tags$tr(tags$td(strong("Year")), tags$td("Categorical"),
+              tags$td("2024 or 2025")),
+      tags$tr(tags$td(strong("Month")), tags$td("Ordered categorical"),
+              tags$td("January through December")),
+      tags$tr(tags$td(strong("Disease")), tags$td("Categorical"),
+              tags$td("Typhoid, Measles, Chickenpox, Mumps, Hep A/B, Pertussis, Rubella, Meningitis")),
+      tags$tr(tags$td(strong("Measles Doses")), tags$td("Count"),
+              tags$td("1st + 2nd measles dose administered — from EPI records")),
+      tags$tr(tags$td(strong("% Change")), tags$td("Numeric (%)"),
+              tags$td("Percentage change from 2024 to 2025, rounded to 1 decimal place"))
+    )
+  )
+)
+```
+
+### Limitations & Author {data-width=3}
+
+```{r limits, echo=FALSE}
+div(
+  style = "padding:24px; font-size:14px; line-height:1.9; color:#2c3e50;",
+
+  h4(style="color:#922b21; margin-top:0; font-size:15px;",
+     "\u26a0\ufe0f Important Limitations"),
+  tags$ul(style="padding-left:18px; line-height:2.1;",
+    tags$li("The surveillance data are ", strong("passive"),
+      " which means true case counts are likely underreported, especially
+      in areas with restricted access due to the conflict."),
+    tags$li("Zero cases for Abyan and Aden in April–September 2025 may reflect ",
+      strong("data collection gaps"), " rather than an actual absence of disease."),
+    tags$li("The relationship between vaccination doses and cases in Widget 3 is ",
+      strong("descriptive, not causal"), " — displacement, immunity gaps, and
+      access barriers all independently affect disease incidence."),
+    tags$li("Population denominators are not available, so it is not possible to
+      calculate ", strong("incidence rates"), " from this dataset."),
+    tags$li("Surveillance coverage start dates differ by governorate, which
+      limits direct cross-governorate comparisons for 2024.")
+  ),
+
+  hr(style="border-top:1px solid #dee2e6; margin:16px 0;"),
+
+  h4(style="color:#1a5276; font-size:15px;", "\U0001f4e6 R Packages"),
+  tags$ul(style="padding-left:18px; line-height:2.2;",
+    tags$li(strong("flexdashboard"), " — dashboard layout and tab structure"),
+    tags$li(strong("plotly"), " — interactive charts with dropdown menus and tooltips"),
+    tags$li(strong("DT"), " — interactive searchable and sortable table"),
+    tags$li(strong("tidyverse"), " — data wrangling and transformation"),
+    tags$li(strong("htmltools"), " — custom HTML in the About tab")
+  ),
+
+  hr(style="border-top:1px solid #dee2e6; margin:16px 0;"),
+
+  h4(style="color:#1a5276; font-size:15px;", "\U0001f9d1\u200d\U0001f4bb Author"),
+  p(strong("Akanshya Dash"), br(),
+    "DATA 555 — Data Science Capstone", br(),
+    "Rollins School of Public Health", br(),
+    "Emory University | Spring 2026")
+)
+```
